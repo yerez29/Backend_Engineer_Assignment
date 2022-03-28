@@ -4,6 +4,7 @@ import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 import json
 from kafka import KafkaProducer
+from utility_helper import TOPIC_NAME
 
 
 class Item(BaseModel):
@@ -30,12 +31,10 @@ app.add_middleware(
 )
 
 
-# Messages will be serialized as JSON
 def serializer(message):
     return json.dumps(message).encode('utf-8')
 
 
-# Kafka Producer
 producer = KafkaProducer(
     bootstrap_servers=['localhost:9092'],
     value_serializer=serializer
@@ -44,7 +43,6 @@ producer = KafkaProducer(
 
 @app.post("/")
 async def root(item: Item):
-    topic_name = "messages-3dsignals"
     message = {
         'car_id': item.car_id,
         'sensor_id': item.sensor_id,
@@ -52,7 +50,7 @@ async def root(item: Item):
         'timestamp': item.timestamp
     }
     partition = int(message.get('sensor_id')[-1]) - 1
-    producer.send(topic_name, message, partition=partition)
+    producer.send(TOPIC_NAME, message, partition=partition)
     return message
 
 
